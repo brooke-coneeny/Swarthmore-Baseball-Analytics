@@ -36,57 +36,16 @@ RapPitch <- read_excel(path = ".xlsx", col_names = TRUE)
 # Format player names to match Rapsodo data files
 internal$RapNames <- paste(internal$`First Name`, internal$`Last Name`, sep="")
 
-#specific player 
-indPlayerData <- subset(internal[i,])
-
-
 for (i in 1:nrow(internal)) {
   indPlayerData <- subset(internal[i,])
   
-  
-  #create pitching sheet 
+  # Create pitching sheet 
   if (indPlayerData$RapNames[1] %in% gsub(" ","",RapPitch$`Player Name`)) {
     rapPitchPlayer <- RapPitch %>% filter(gsub(" ","",RapPitch$`Player Name`) == indPlayerData$RapNames[1])
     rapPitchPlayer <- rapPitchPlayer %>% filter(Spin != '-' & rapPitchPlayer$`Spin Efficiency (release)` != '-')
     rapPitchPlayer$Spin <- as.numeric(as.character(rapPitchPlayer$Spin))
     rapPitchPlayer$`Spin Efficiency (release)` <- as.numeric(as.character(rapPitchPlayer$`Spin Efficiency (release)`))
-    
-    #the spin axes are being uploaded as the proportion that time is out of 24 hours for some entries so made a fix 
-    if (indPlayerData$RapNames[1] %in% c("LeviSterling", "CohenGomez", "CooperWilliams", "GavinStedman", "MasonRussell", 
-                                         "TannerWaldrop", "BryceNavarre", "Coleman(Kash)Mayfield", "BrendonBennett", 
-                                         "RyanSloan", "ZionTheophilus", "JacksonSanders")) {
-      
-      # For all of the entries 
-      for (s in 1:length(rapPitchPlayer$`Spin Axis`)) {
-        # If it is of type decimal when converted to numeric format
-        if (!is.na(as.numeric(rapPitchPlayer$`Spin Axis`[s]))) {
-          # Find the number of hours 
-          rapPitchPlayer$`Spin Axis`[s] <- as.numeric(rapPitchPlayer$`Spin Axis`[s]) * 24
-          # Convert number of hours to numeric class 
-          numeric_spin <- as.numeric(rapPitchPlayer$`Spin Axis`[s])
-          # Starting the clock at midnight 
-          midnight <- strptime("00:00", format = "%H:%M", tz = "UTC")
-          # Calculate the new time 
-          time <- midnight + (numeric_spin * 60 * 60)
-          # Add this time to the data set in the form of a character 
-          rapPitchPlayer$`Spin Axis`[s] <- as.character(time) 
-        } else {
-          # Else, it turns to NA when converted to numeric type so instead we go to POSIXct to character 
-          rapPitchPlayer$`Spin Axis`[s] <- as.character(as.POSIXct(paste(rapPitchPlayer$`Spin Axis`[s]), format = "%H:%M", tz = "UTC"))
-        }
-      }
-      
-      # If they are not one of the pitchers who had the weird data, do the calculation 
-    } else {
-      # Find how many hours past midnight
-      rapPitchPlayer$`Spin Axis` <- as.numeric(rapPitchPlayer$`Spin Axis`) * 24
-      # Starting at midnight 
-      midnight <- strptime("00:00", format = "%H:%M", tz = "UTC")
-      # Calculate the new time 
-      times <- c(midnight + (rapPitchPlayer$`Spin Axis` * 60 * 60))
-      rapPitchPlayer$`Spin Axis` <- times
-    }
-    
+    rapPitchPlayer$`Spin Axis` <- format(as.POSIXct(strptime(rapPitchPlayer$`Spin Axis`, "%H:%M")), "%H:%M:%S")
     rapPitchPlayer$`VB (spin)` <- as.numeric(as.character(rapPitchPlayer$`VB (spin)`))
     rapPitchPlayer$`HB (spin)` <- as.numeric(as.character(rapPitchPlayer$`HB (spin)`))
     rapPitchPlayer$`Release Angle` <- as.numeric(as.character(rapPitchPlayer$`Release Angle`))
@@ -96,7 +55,7 @@ for (i in 1:nrow(internal)) {
     rapPitchPlayer$`Strike Zone Side` <- as.numeric(as.character(rapPitchPlayer$`Strike Zone Side`))
     rapPitchPlayer$`Strike Zone Height` <- as.numeric(as.character(rapPitchPlayer$`Strike Zone Height`))
     
-    #create HB/VB and release location plots
+    # Create HB/VB and release location plots
     cols <- c("Fastball" = "blue", "TwoSeamFastball" = "cyan", "CurveBall" = "green3", "ChangeUp" = "darkorange", "Cutter" = "red3", "Slider" = "purple", "Splitter" = "deeppink", "Sinker" = "darkgoldenrod1")
     
     HBVBPlot <- ggplot(rapPitchPlayer, aes(x = rapPitchPlayer$`HB (spin)`, y = rapPitchPlayer$`VB (spin)`)) + geom_point(aes(color = rapPitchPlayer$`Pitch Type`), show.legend = TRUE) + 
@@ -130,7 +89,7 @@ for (i in 1:nrow(internal)) {
     # Reformat spin axis 
     rapPitchPlayer$`Spin Axis` <-  c(strftime(rapPitchPlayer$`Spin Axis`, "%H:%M:%S", tz = "UTC"))
     
-    #calculate pitch statistics for each pitch type for player
+    # Calculate pitch statistics for each pitch type for player
     for (j in 1:nrow(rapPitchAvgs)) {
       pitch_type <- row.names(rapPitchAvgs)[j]
       rapPitchAvgs[j,"Number of Pitches"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% nrow()
@@ -327,7 +286,7 @@ for (i in 1:nrow(internal)) {
   
   RPdoc <- image_join(RPdoc, RPMdoc)
   
-  #write final document to wd
-  image_write(RPdoc,path=paste0("Pitching Sheets/", internal$`Last Name`[i],internal$`First Name`[i],"Pitching.pdf"),format="pdf", quality = 100,density = 300)
+  # Write final document to wd
+  image_write(RPdoc,path=paste0("Pitching Reports/", internal$`Last Name`[i],internal$`First Name`[i],"Pitching.pdf"),format="pdf", quality = 100,density = 300)
   
 }
