@@ -1,37 +1,37 @@
 #load libraries
-#library(plyr)
-#library(dplyr)
-#library(tidyr)
-#library(ggplot2)
-#library(reshape2)
-#library(forcats)
+library(plyr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(reshape2)
+library(forcats)
 library(readxl)
-#library(data.table)
+library(data.table)
 library(magick)
 library(openxlsx)
-#library(cowplot)
-#library(extrafont)
-#library(gridExtra)
-#library(rlang)
+library(cowplot)
+library(extrafont)
+library(gridExtra)
+library(rlang)
 library(reader)
 library(rmarkdown)
-#library(plotrix)
+library(plotrix)
 library(chron)
 library(pdftools)
-library(tidyverse)
 
 # Location of static pages within folder
 setwd("C:/Users/bcone/Downloads/Swat Baseball/Static Pages")
 
 # Static PDF page for report
-RPMdoc <- image_read_pdf("SwatBaseballReportBlank.pdf")
+RPdoc <- image_read_pdf("SwatBaseballReportBlank.pdf")
+pitchSilhouette <- image_read("pitcherSilhouette.png")
 
 # Location of data for practice
 setwd("C:/Users/bcone/Downloads/Swat Baseball")
 
 # Collected Rapsodo pitching data 
 internal <- read_excel(path = "Swat Baseball Roster 2022_2023.xlsx", col_names = TRUE) 
-RapPitch <- read_excel(path = ".xlsx", col_names = TRUE) 
+RapPitch <- read_excel(path = "Swat Baseball Example Data.xlsx", col_names = TRUE) 
 
 # Format player names to match Rapsodo data files
 internal$RapNames <- paste(internal$`First Name`, internal$`Last Name`, sep="")
@@ -45,7 +45,8 @@ for (i in 1:nrow(internal)) {
     rapPitchPlayer <- rapPitchPlayer %>% filter(Spin != '-' & rapPitchPlayer$`Spin Efficiency (release)` != '-')
     rapPitchPlayer$Spin <- as.numeric(as.character(rapPitchPlayer$Spin))
     rapPitchPlayer$`Spin Efficiency (release)` <- as.numeric(as.character(rapPitchPlayer$`Spin Efficiency (release)`))
-    rapPitchPlayer$`Spin Axis` <- format(as.POSIXct(strptime(rapPitchPlayer$`Spin Axis`, "%H:%M")), "%H:%M:%S")
+    #rapPitchPlayer$`Spin Axis` <- format(as.POSIXct(strptime(rapPitchPlayer$`Spin Axis`, "%H:%M")), "%H:%M:%S")
+    rapPitchPlayer$`Spin Axis` <- c(strftime(rapPitchPlayer$`Spin Axis`, "%H:%M:%S", tz = "UTC"))
     rapPitchPlayer$`VB (spin)` <- as.numeric(as.character(rapPitchPlayer$`VB (spin)`))
     rapPitchPlayer$`HB (spin)` <- as.numeric(as.character(rapPitchPlayer$`HB (spin)`))
     rapPitchPlayer$`Release Angle` <- as.numeric(as.character(rapPitchPlayer$`Release Angle`))
@@ -76,18 +77,15 @@ for (i in 1:nrow(internal)) {
     }
     SZPlot <- ggplot(rapPitchPlayer, aes(x = rapPitchPlayer$`Strike Zone Side`, y = rapPitchPlayer$`Strike Zone Height`)) + geom_rect(xmin = -8.5, xmax = 8.5, ymin = 18, ymax = 42, color = "black", fill = "#EEEEEE") + geom_point(aes(color = rapPitchPlayer$`Pitch Type`), show.legend = FALSE) + scale_color_manual(values = cols) + xlab("Strike Zone Side (in)") + ylab("Strike Zone Height (in)") + theme(text = element_text(family = "DINCondensed-Bold", size = 15), panel.grid.major = element_line(linetype = "solid", colour = "#EEEEEE"), legend.position = "none") + xlim(-35,35) + ylim(0,60)
     
-    ggsave(filename = paste0("PDF Full Reports/", internal$`Last Name`[i], internal$`First Name`[i],"HBVB",".png"), plot = HBVBPlot, width=8.875,height=3.7,units="in",dpi=265)
-    ggsave(filename = paste0("PDF Full Reports/", internal$`Last Name`[i], internal$`First Name`[i],"releaseLoc",".png"), plot = releasePlot, width=2.7,height=3,units="in",dpi=265)
-    ggsave(filename = paste0("PDF Full Reports/", internal$`Last Name`[i], internal$`First Name`[i],"strikezone",".png"), plot = SZPlot, width=2.7,height=3,units="in",dpi=265)
+    ggsave(filename = paste0("Pitching Reports/", internal$`Last Name`[i], internal$`First Name`[i],"HBVB",".png"), plot = HBVBPlot, width=8.875,height=3.7,units="in",dpi=265)
+    ggsave(filename = paste0("Pitching Reports/", internal$`Last Name`[i], internal$`First Name`[i],"releaseLoc",".png"), plot = releasePlot, width=2.7,height=3,units="in",dpi=265)
+    ggsave(filename = paste0("Pitching Reports/", internal$`Last Name`[i], internal$`First Name`[i],"strikezone",".png"), plot = SZPlot, width=2.7,height=3,units="in",dpi=265)
     
     rapPitchAvgs <- data.frame(matrix(NA, nrow = length(unique(rapPitchPlayer$`Pitch Type`)), ncol = 16))
     colnames(rapPitchAvgs) <- c("Number of Pitches", "AVG Spin", "MAX Spin", "AVG HB", "MAX HB", "AVG VB", "MAX VB", "Spin Eff", "Gyro Deg", "Spin Dir", "AVG Velo", "MAX Velo", "MIN Velo", "Release Height", "Release Side", "Release Angle")
     row.names(rapPitchAvgs) <- unique(rapPitchPlayer$`Pitch Type`)
     
     absmax <- function(x) { x[which.max( abs(x) )]}
-    
-    # Reformat spin axis 
-    rapPitchPlayer$`Spin Axis` <-  c(strftime(rapPitchPlayer$`Spin Axis`, "%H:%M:%S", tz = "UTC"))
     
     # Calculate pitch statistics for each pitch type for player
     for (j in 1:nrow(rapPitchAvgs)) {
@@ -101,9 +99,7 @@ for (i in 1:nrow(internal)) {
       rapPitchAvgs[j,"MAX VB"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% summarise(absmax(`VB (spin)`))
       rapPitchAvgs[j,"Spin Eff"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% summarise(mean(`Spin Efficiency (release)`))
       rapPitchAvgs[j,"Gyro Deg"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% summarise(mean(`Gyro Degree (deg)`))
-      
       rapPitchAvgs[j,"Spin Dir"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% summarise(substring(mean(times(`Spin Axis`)), 0, 5))
-      
       rapPitchAvgs[j,"AVG Velo"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% summarise(round(mean(Speed), 1))
       rapPitchAvgs[j,"MAX Velo"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% summarise(round(max(Speed), 1))
       rapPitchAvgs[j,"MIN Velo"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% summarise(round(min(Speed), 1))
@@ -112,14 +108,16 @@ for (i in 1:nrow(internal)) {
       rapPitchAvgs[j,"Release Angle"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% summarise(round(mean(`Release Angle`), 1))
     }
     
-    RPdoc <- image_read_pdf("Static Pages/2022RapsodoPitchingReport.pdf")
-    HBVB_pic <- image_read(paste0("PDF Full Reports/", internal$`Last Name`[i], internal$`First Name`[i],"HBVB",".png"))
-    release_pic <- image_read(paste0("PDF Full Reports/", internal$`Last Name`[i], internal$`First Name`[i],"releaseLoc",".png"))
-    SZ_pic <- image_read(paste0("PDF Full Reports/", internal$`Last Name`[i], internal$`First Name`[i],"strikezone",".png"))
+    RPdoc <- image_read_pdf("Static Pages/SwatBaseballReportBlank.pdf")
+    HBVB_pic <- image_read(paste0("Pitching Reports/", internal$`Last Name`[i], internal$`First Name`[i],"HBVB",".png"))
+    release_pic <- image_read(paste0("Pitching Reports/", internal$`Last Name`[i], internal$`First Name`[i],"releaseLoc",".png"))
+    SZ_pic <- image_read(paste0("Pitching Reports/", internal$`Last Name`[i], internal$`First Name`[i],"strikezone",".png"))
     
     RPdoc <- image_composite(RPdoc, HBVB_pic, offset = "+80+2110")
     RPdoc <- image_composite(RPdoc, release_pic, offset = "+1700+2125")
     RPdoc <- image_composite(RPdoc, SZ_pic, offset = "+100+2125")
+    
+    RPdoc <- image_annotate(RPdoc, paste0(rapPitchPlayer$`Player Name`), gravity = "center", font = "DIN Condensed", size = 50, location = "+5-1350")
     
     if (!is.na(rapPitchAvgs["Fastball", 1])) {
       RPdoc <- image_annotate(RPdoc, as.character(rapPitchAvgs["Fastball",1]), gravity = "center", font = "DIN Condensed", size = 10.5, location = "-695-930")
@@ -283,8 +281,6 @@ for (i in 1:nrow(internal)) {
     
     
   }
-  
-  RPdoc <- image_join(RPdoc, RPMdoc)
   
   # Write final document to wd
   image_write(RPdoc,path=paste0("Pitching Reports/", internal$`Last Name`[i],internal$`First Name`[i],"Pitching.pdf"),format="pdf", quality = 100,density = 300)
