@@ -59,28 +59,51 @@ for (i in 1:nrow(internal)) {
     # Create HB/VB and release location plots
     cols <- c("Fastball" = "blue", "TwoSeamFastball" = "cyan", "CurveBall" = "green3", "ChangeUp" = "darkorange", "Cutter" = "red3", "Slider" = "purple", "Splitter" = "deeppink", "Sinker" = "darkgoldenrod1")
     
-    HBVBPlot <- ggplot(rapPitchPlayer, aes(x = rapPitchPlayer$`HB (spin)`, y = rapPitchPlayer$`VB (spin)`)) + geom_point(aes(color = rapPitchPlayer$`Pitch Type`), show.legend = TRUE) + 
+    HBVBPlot <- rapPitchPlayer %>%
+      ggplot(aes(x = `HB (spin)`, y = `VB (spin)`)) + geom_point(aes(color = `Pitch Type`), show.legend = TRUE) + 
       scale_color_manual(values = cols) + xlab("Horizontal Break (in)") + ylab("Vertical Break (in)") +  
-      theme(text = element_text(family = "DINCondensed-Bold", size = 15), panel.grid.major = element_line(linetype = "solid", colour = "#EEEEEE"), legend.position = "bottom") + 
+      theme(text = element_text(size = 15), panel.grid.major = element_line(linetype = "solid", colour = "#EEEEEE"), legend.position = "bottom") + 
       xlim(-max(abs(rapPitchPlayer$`HB (spin)`)), max(abs(rapPitchPlayer$`HB (spin)`))) + ylim(-max(abs(rapPitchPlayer$`VB (spin)`)), max(abs(rapPitchPlayer$`VB (spin)`))) +
       theme(legend.title= element_blank(), legend.text=element_text(size=6), plot.margin = margin(t = 10, r = 225, b = 10, l = 225)) + guides(colour = guide_legend(nrow = 1))
     
-    releasePlot <- ggplot(rapPitchPlayer, aes(x = rapPitchPlayer$`Release Side`, y = rapPitchPlayer$`Release Height`)) + geom_point(aes(color = rapPitchPlayer$`Pitch Type`), show.legend = FALSE) + scale_color_manual(values = cols) + 
-      xlab("Release Side (ft)") + ylab("Release Height (ft)") +  theme(text = element_text(family = "DINCondensed-Bold", size = 15), panel.grid.major = element_line(linetype = "solid", colour = "#EEEEEE"), legend.position = "none") + xlim(-max(abs(rapPitchPlayer$`Release Side`)), max(abs(rapPitchPlayer$`Release Side`))) + 
+    releasePlot <- rapPitchPlayer %>%
+      ggplot(aes(x = `Release Side`, y = `Release Height`)) + geom_point(aes(color = `Pitch Type`), show.legend = FALSE) + 
+      scale_color_manual(values = cols) + xlab("Release Side (ft)") + ylab("Release Height (ft)") +  
+      theme(text = element_text(size = 15), panel.grid.major = element_line(linetype = "solid", colour = "#EEEEEE"), legend.position = "none") + 
+      xlim(-max(abs(rapPitchPlayer$`Release Side`)), max(abs(rapPitchPlayer$`Release Side`))) + 
       ylim(4.5,max(rapPitchPlayer$`Release Height`)) 
+    
+    velocityPlot <- rapPitchPlayer %>%
+      group_by(`Pitch Type`) %>%
+      mutate(pitch_num = 1:n()) %>%
+      ggplot(aes(y = Speed, x = pitch_num, color = `Pitch Type`)) + scale_color_manual(values = cols) +
+      geom_line() + geom_point() + theme(text = element_text(size = 15), panel.grid.major = element_line(linetype = "solid", colour = "#EEEEEE")) +
+      labs(
+        x = "Pitch Number",
+        y = "Velocity (mph)"
+      ) +
+      theme(legend.position = "None")
     
     if (mean(rapPitchPlayer$`Release Side`) < 0) {
       releasePlot <- ggdraw() + draw_image(image_flop(pitchSilhouette), scale = 0.47, x = 0.05, y = -0.05) + draw_plot(releasePlot)
     }
+    
     if (mean(rapPitchPlayer$`Release Side`) > 0) {
       releasePlot <- ggdraw() + draw_image(pitchSilhouette, scale = 0.47, x = 0.1, y = -0.05) + draw_plot(releasePlot)
     }
-    SZPlot <- ggplot(rapPitchPlayer, aes(x = rapPitchPlayer$`Strike Zone Side`, y = rapPitchPlayer$`Strike Zone Height`)) + geom_rect(xmin = -8.5, xmax = 8.5, ymin = 18, ymax = 42, color = "black", fill = "#EEEEEE") + geom_point(aes(color = rapPitchPlayer$`Pitch Type`), show.legend = FALSE) + scale_color_manual(values = cols) + xlab("Strike Zone Side (in)") + ylab("Strike Zone Height (in)") + theme(text = element_text(family = "DINCondensed-Bold", size = 15), panel.grid.major = element_line(linetype = "solid", colour = "#EEEEEE"), legend.position = "none") + xlim(-35,35) + ylim(0,60)
+    
+    SZPlot <- ggplot(rapPitchPlayer, aes(x = `Strike Zone Side`, y =`Strike Zone Height`)) + 
+      geom_rect(xmin = -8.5, xmax = 8.5, ymin = 18, ymax = 42, color = "black", fill = "#EEEEEE") + 
+      geom_point(aes(color = `Pitch Type`), show.legend = FALSE) + scale_color_manual(values = cols) + 
+      xlab("Strike Zone Side (in)") + ylab("Strike Zone Height (in)") + 
+      theme(text = element_text(size = 15), panel.grid.major = element_line(linetype = "solid", colour = "#EEEEEE"), legend.position = "none") + 
+      xlim(-35,35) + ylim(0,60)
     
     ggsave(filename = paste0("Pitching Reports/", internal$`Last Name`[i], internal$`First Name`[i],"HBVB",".png"), plot = HBVBPlot, width=8.875,height=3.7,units="in",dpi=265)
     ggsave(filename = paste0("Pitching Reports/", internal$`Last Name`[i], internal$`First Name`[i],"releaseLoc",".png"), plot = releasePlot, width=2.7,height=3,units="in",dpi=265)
     ggsave(filename = paste0("Pitching Reports/", internal$`Last Name`[i], internal$`First Name`[i],"strikezone",".png"), plot = SZPlot, width=2.7,height=3,units="in",dpi=265)
-    
+    ggsave(filename = paste0("Pitching Reports/", internal$`Last Name`[i], internal$`First Name`[i],"velocity",".png"), plot = velocityPlot, width=2.7,height=3.05,units="in",dpi=265)
+  
     rapPitchAvgs <- data.frame(matrix(NA, nrow = length(unique(rapPitchPlayer$`Pitch Type`)), ncol = 16))
     colnames(rapPitchAvgs) <- c("Number of Pitches", "AVG Spin", "MAX Spin", "AVG HB", "MAX HB", "AVG VB", "MAX VB", "Spin Eff", "Gyro Deg", "Spin Dir", "AVG Velo", "MAX Velo", "MIN Velo", "Release Height", "Release Side", "Release Angle")
     row.names(rapPitchAvgs) <- unique(rapPitchPlayer$`Pitch Type`)
@@ -111,13 +134,16 @@ for (i in 1:nrow(internal)) {
     RPdoc <- image_read_pdf("Static Pages/SwatBaseballReportBlank.pdf")
     HBVB_pic <- image_read(paste0("Pitching Reports/", internal$`Last Name`[i], internal$`First Name`[i],"HBVB",".png"))
     release_pic <- image_read(paste0("Pitching Reports/", internal$`Last Name`[i], internal$`First Name`[i],"releaseLoc",".png"))
+    velocity_pic <- image_read(paste0("Pitching Reports/", internal$`Last Name`[i], internal$`First Name`[i],"velocity",".png"))
     SZ_pic <- image_read(paste0("Pitching Reports/", internal$`Last Name`[i], internal$`First Name`[i],"strikezone",".png"))
     
     RPdoc <- image_composite(RPdoc, HBVB_pic, offset = "+80+2110")
-    RPdoc <- image_composite(RPdoc, release_pic, offset = "+1700+2125")
+    #RPdoc <- image_composite(RPdoc, release_pic, offset = "+1700+2125")
+    RPdoc <- image_composite(RPdoc, velocity_pic, offset = "+1700+2125")
     RPdoc <- image_composite(RPdoc, SZ_pic, offset = "+100+2125")
     
-    RPdoc <- image_annotate(RPdoc, paste0(rapPitchPlayer$`Player Name`), gravity = "center", font = "DIN Condensed", size = 50, location = "+5-1350")
+    RPdoc <- image_annotate(RPdoc, paste0(rapPitchPlayer$`Player Name`), gravity = "center", size = 50, location = "+5-1350")
+    RPdoc <- image_annotate(RPdoc, paste0(rapPitchPlayer$Date), gravity = "center", size = 25, location = "+5-1200")
     
     if (!is.na(rapPitchAvgs["Fastball", 1])) {
       RPdoc <- image_annotate(RPdoc, as.character(rapPitchAvgs["Fastball",1]), gravity = "center", font = "DIN Condensed", size = 10.5, location = "-695-930")
