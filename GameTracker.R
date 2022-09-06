@@ -1,9 +1,11 @@
 
 library(shiny)
-library(DT)
+library(DT) # for data tables 
 library(tidyverse)
+library(data.table)
 
-
+library(openxlsx)
+  
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
@@ -19,7 +21,7 @@ ui <- fluidPage(
       radioButtons("numberOuts", "Outs", c(0,1,2,3)),
         
       # Select Input: where are the runners?
-      checkboxGroupInput("baseRunners", "Runners on Base", c("None", "1st", "2nd", "3rd")),
+      checkboxGroupInput("baseRunners", "Runners on Base", c("None", "1st", "2nd", "3rd", "1st & 2nd", "1st & 3rd", "2nd & 3rd", "Loaded")),
         
       # Button: what is the count?        
       selectInput("strike", "Strike", c(0,1,2,3)),
@@ -31,45 +33,61 @@ ui <- fluidPage(
       # Button: submit count
       actionButton("submit", "Submit"),
       
+      # Button: add count 
+      actionButton("append", "Append"),
+      
       # Button: end session
       actionButton("end", "End Session")
     ),
     
-  
-    mainPanel(uiOutput('table'))
+    mainPanel(
+      tableOutput("table")
+    )
     
 )
 
 
 server <- function(input, output) {
 
-  individualData = reactiveValues(d1 = as.data.frame(matrix(nrow = 1, ncol = 6)))
-  gameData = as.data.frame(matrix(nrow = 3, ncol = 6))
-  names(gameData)=c("Name","Outs","Runners","Strikes","Balls","Outcome")
+  # Data table holding the entire play-by-play for the game 
+  individualData = data.table(matrix(data = NA, ncol = 6))
+  names(individualData)=c("Name","Outs","Runners","Strikes","Balls","Outcome")
   
+  # Data table holding the play-by-play for the current pitch
+  temp = as.data.frame(matrix(data = NA, nrow = 1, ncol = 6))
+  names(temp)=c("Name","Outs","Runners","Strikes","Balls","Outcome")
   
-  observeEvent(input$submit, {
+  values <- reactiveValues(Total = individualData, Part = temp)
+  
+  current_event <- observeEvent(input$submit, {
     
-    temp = individualData$d1
-    names(temp)=c("Name","Outs","Runners","Strikes","Balls","Outcome")
-    temp$Name=input$batterName
-    temp$Outs=input$numberOuts
-    temp$Runners=input$baseRunners
-    temp$Strikes=input$strike
-    temp$Balls=input$ball
-    temp$Outcome=input$outcome
-      
-    individualData$d1 = temp
-    rbind(gameData,individualData$d1)
+    # Enter the data into the table with the current play 
+    values$Part[1,]$Name=input$batterName
+    values$Part[1,]$Outs=input$numberOuts
+    values$Part[1,]$Runners=input$baseRunners
+    values$Part[1,]$Strikes=input$strike
+    values$Part[1,]$Balls=input$ball   
+    values$Part[1,]$Outcome=input$outcome
+    
+    # Return the data 
+    print(values$Part)
+    return(values$Part)
   })
   
-  output$first=renderTable({
-    individualData$da
+  observeEvent(input$append, {
+    values$Total <- rbind(values$Total,values$Part)
+    print(values$Total)
   })
   
-  observe({print(individualData$d1)})  # check console output
-  observe({print(gameData)})  # check console output
   
+  #output$end <- downloadHandler(
+    #filename = function() {
+     # paste("GameData", ".csv", sep = "")
+    #},
+    #content = function(file) {
+     # write.csv(individualData, file, row.names = FALSE)
+    #}
+  #)
 }
 
 # Run the application 
