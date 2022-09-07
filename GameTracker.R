@@ -42,7 +42,7 @@ ui <- fluidPage(
       selectInput("rbi", "RBI's", c(0,1,2,3,4)),
       
       # Select Input: how many runs
-      selectInput("runs", "Runs", c(1,2,3,4)),
+      selectInput("runs", "Runs", c(0,1,2,3,4)),
       
       # Button: submit data that goes alongside the pitch thrown
       actionButton("submit", "Submit"),
