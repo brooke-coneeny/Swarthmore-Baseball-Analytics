@@ -22,7 +22,7 @@ ui <- fluidPage(
       verbatimTextOutput("pitcherName"),
       
       # Select Input: what inning is it?
-      textInput("inning", "Inning", "1st"),
+      textInput("inning", "Inning", "1"),
       verbatimTextOutput("inning"),
       
       # Select Input: how many outs are there?
@@ -44,11 +44,15 @@ ui <- fluidPage(
       # Select Input: how many runs
       selectInput("runs", "Runs", c(0,1,2,3,4)),
       
+      # Text Input: how many runs score that inning? 
+      numericInput("runshome", "Home's Runs", 0),
+      numericInput("runsaway", "Away's Runs", 0),
+
       # Button: submit data that goes alongside the pitch thrown
       actionButton("submit", "Submit"),
       
       # Button: saves the data 
-      actionButton("end", "Save Data")
+      actionButton("end", "Save Data"),
     ),
     
     mainPanel(
@@ -62,12 +66,12 @@ ui <- fluidPage(
 server <- function(input, output) {
 
   # Data table holding the entire play-by-play for the game 
-  individualData = data.table(matrix(ncol = 10))
-  names(individualData)=c("Batter's Name", "Pitcher's Name", "Inning", "Outs","Runners","Strikes","Balls","Outcome", "RBI's", "Runs")
+  individualData = data.table(matrix(ncol = 12))
+  names(individualData)=c("Batter's Name", "Pitcher's Name", "Inning", "Outs","Runners","Strikes","Balls","Outcome", "RBI's", "Runs", "Away's Runs", "Home's Runs")
   
   # Data table holding the play-by-play for the current pitch
-  temp = as.data.frame(matrix(data = NA, nrow = 1, ncol = 10))
-  names(temp)=c("Batter's Name", "Pitcher's Name", "Inning", "Outs","Runners","Strikes","Balls","Outcome", "RBI's", "Runs")
+  temp = as.data.frame(matrix(data = NA, nrow = 1, ncol = 12))
+  names(temp)=c("Batter's Name", "Pitcher's Name", "Inning", "Outs","Runners","Strikes","Balls","Outcome", "RBI's", "Runs", "Away's Runs", "Home's Runs")
   
   # Making our total data set a reactive value so that it continues to update 
   values <- reactiveValues(Total = individualData, Part = temp)
@@ -86,6 +90,8 @@ server <- function(input, output) {
     values$Part[1,]$Outcome=input$outcome
     values$Part[1,]$`RBI's`=input$rbi
     values$Part[1,]$Runs=input$runs
+    values$Part[1,]$`Away's Runs`=input$runsaway
+    values$Part[1,]$`Home's Runs`=input$runshome
     
     # Add this to main dataset 
     values$Total <- rbind(values$Total,values$Part)
@@ -94,6 +100,7 @@ server <- function(input, output) {
   
   # Show the user the row of data most recently added to the dataset
   output$table1 <- renderTable({ values$Part[1,] })
+  
   # Display the entire data set 
   output$table2 <- renderTable({ values$Total })
   
