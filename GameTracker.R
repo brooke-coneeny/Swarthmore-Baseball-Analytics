@@ -21,6 +21,10 @@ ui <- fluidPage(
       textInput("pitcherName", "Pitcher's Name", " "),
       verbatimTextOutput("pitcherName"),
       
+      # Text Input: home or away? 
+      textInput("team", "Team Hitting?", " "),
+      verbatimTextOutput("team"),
+      
       # Select Input: what inning is it?
       textInput("inning", "Inning", "1"),
       verbatimTextOutput("inning"),
@@ -66,12 +70,12 @@ ui <- fluidPage(
 server <- function(input, output) {
 
   # Data table holding the entire play-by-play for the game 
-  individualData = data.table(matrix(ncol = 12))
-  names(individualData)=c("Batter's Name", "Pitcher's Name", "Inning", "Outs","Runners","Strikes","Balls","Outcome", "RBI's", "Runs", "Away's Runs", "Home's Runs")
+  individualData = data.table(matrix(ncol = 13))
+  names(individualData)=c("Batter's Name", "Pitcher's Name", "Team", "Inning", "Outs","Runners","Strikes","Balls","Outcome", "RBI's", "Runs", "Away's Runs", "Home's Runs")
   
   # Data table holding the play-by-play for the current pitch
-  temp = as.data.frame(matrix(data = NA, nrow = 1, ncol = 12))
-  names(temp)=c("Batter's Name", "Pitcher's Name", "Inning", "Outs","Runners","Strikes","Balls","Outcome", "RBI's", "Runs", "Away's Runs", "Home's Runs")
+  temp = as.data.frame(matrix(data = NA, nrow = 1, ncol = 13))
+  names(temp)=c("Batter's Name", "Pitcher's Name", "Team", "Inning", "Outs","Runners","Strikes","Balls","Outcome", "RBI's", "Runs", "Away's Runs", "Home's Runs")
   
   # Making our total data set a reactive value so that it continues to update 
   values <- reactiveValues(Total = individualData, Part = temp)
@@ -82,6 +86,7 @@ server <- function(input, output) {
     # Enter the data into the table with the current play 
     values$Part[1,]$`Batter's Name`=input$batterName
     values$Part[1,]$`Pitcher's Name`=input$pitcherName
+    values$Part[1,]$Team=input$team
     values$Part[1,]$Inning=input$inning
     values$Part[1,]$Outs=input$numberOuts
     values$Part[1,]$Runners=input$baseRunners
