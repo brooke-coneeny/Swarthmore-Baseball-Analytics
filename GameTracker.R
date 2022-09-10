@@ -37,10 +37,11 @@ ui <- fluidPage(
         
       # Button: what is the count?        
       selectInput("strike", "Strike", c(0,1,2,3)),
+      selectInput("strikeType", "Strike Type", c("NA" "Swinging", "Looking", "Foul")),
       selectInput("ball", "Ball", c(0,1,2,3,4)),
         
       # Button: what is the outcome of the at bat? 
-      selectInput("outcome", "Outcome", c("NULL", "Out", "Single", "Double", "Triple", "HR", "Walk", "HBP", "Sac Fly", "Sac Bunt", "Squeeze Bunt", "Error", "Intentional Walk")),
+      selectInput("outcome", "Outcome", c("NULL", "Out", "Strike Out", "Single", "Double", "Triple", "HR", "Walk", "HBP", "Sac Fly", "Sac Bunt", "Squeeze Bunt", "Error", "Intentional Walk", "Fielder's Choice", "Double Play", "Triple Play")),
       
       # Select Input: how many RBI's
       selectInput("rbi", "RBI's", c(0,1,2,3,4)),
@@ -70,12 +71,12 @@ ui <- fluidPage(
 server <- function(input, output) {
 
   # Data table holding the entire play-by-play for the game 
-  individualData = data.table(matrix(ncol = 13))
-  names(individualData)=c("Batter's Name", "Pitcher's Name", "Team", "Inning", "Outs","Runners","Strikes","Balls","Outcome", "RBI's", "Runs", "Away's Runs", "Home's Runs")
+  individualData = data.table(matrix(ncol = 14))
+  names(individualData)=c("Batter's Name", "Pitcher's Name", "Team", "Inning", "Outs","Runners","Strikes", "Strike Type", "Balls","Outcome", "RBI's", "Runs", "Away's Runs", "Home's Runs")
   
   # Data table holding the play-by-play for the current pitch
-  temp = as.data.frame(matrix(data = NA, nrow = 1, ncol = 13))
-  names(temp)=c("Batter's Name", "Pitcher's Name", "Team", "Inning", "Outs","Runners","Strikes","Balls","Outcome", "RBI's", "Runs", "Away's Runs", "Home's Runs")
+  temp = as.data.frame(matrix(data = NA, nrow = 1, ncol = 14))
+  names(temp)=c("Batter's Name", "Pitcher's Name", "Team", "Inning", "Outs","Runners","Strikes", "Strike Type", "Balls","Outcome", "RBI's", "Runs", "Away's Runs", "Home's Runs")
   
   # Making our total data set a reactive value so that it continues to update 
   values <- reactiveValues(Total = individualData, Part = temp)
@@ -91,6 +92,7 @@ server <- function(input, output) {
     values$Part[1,]$Outs=input$numberOuts
     values$Part[1,]$Runners=input$baseRunners
     values$Part[1,]$Strikes=input$strike
+    values$Part[1,]$`Strike Type`=input$strikeType
     values$Part[1,]$Balls=input$ball   
     values$Part[1,]$Outcome=input$outcome
     values$Part[1,]$`RBI's`=input$rbi
