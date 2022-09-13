@@ -4,18 +4,12 @@
 
 ### Load in libraries
 library(tidyverse)
+library(openxlsx)
+library(readxl)
 
 ### Load in data set
-setwd("C:/Users/bcone/Downloads/Swat Baseball/Trackman")
-GameData <- read.csv(path = "GameData.csv", col_names = TRUE) 
-
-### Hard code in the number of runs scored at the end of each inning
-scoreboard <- as.data.frame(matrix(ncol = 9, nrow = 2))
-# Scores for the away team each inning
-scoreboard[1,] = c(2,0,0,0,0,0,0,0,0)
-# Scores for the home team each inning 
-scoreboard[2,] = c(0,0,0,0,0,0,0,0,0)
-
+setwd("C:/Users/bcone/Downloads/Swat Baseball/Data")
+GameData <- read_excel(path = "TotalInnerSquadFall.xlsx", col_names = TRUE) 
 
 # Create a RE24 matrix
 
@@ -89,47 +83,59 @@ scoreboard[2,] = c(0,0,0,0,0,0,0,0,0)
                      "LoadedTwo")
     
     # Data frame which will hold the new data 
-    new_data <- as.data.frame(matrix(ncol = ncol(instances) + 1))
-    names(new_data)=c("Batter.s.Name", "Pitcher.s.Name", "Team", "Inning", "Outs","Runners","Strikes","Balls","Outcome", "RBI.s", "Runs", "Away.s.Runs", "Home.s.Runs", "instance", "num_instance", "instances_runs")
+    new_data <- as.data.frame(matrix(ncol = ncol(instances)))
+    #names(new_data)=c("`Batter's Name`", "`Pitcher's Name`", "Team", "Outting", "Outs","Runners","Strikes", "`Strike Type`", "Balls","Outcome", "`RBI's`", "Runs", "`Away's Runs`", "`Home's Runs`", "instance", "num_instance", "instances_runs")
+    colnames(new_data) <- colnames(instances)
     
     # Function: 
     ## Passes in instances_runs: filtered data set to a specific instance 
     ## Passes in inning: the specific inning we are looking at 
     ## Returns data frame with the difference between final score and current score for the inning 
-    calc_difference <- function(data, inning) {
-      for (k in 1:nrow(data)) {
-        end_score <- scoreboard[1,inning]
-        score <- as.numeric(data[k,"Away.s.Runs"])
-        difference <- end_score - score
-        data$instances_runs[k] = difference 
+    calc_difference <- function(data) {
+
+      # For each time this situation occurred 
+      for (i in 1:nrow(data)) {
+        # Find the score at the end of the current inning 
+        score <- data %>%
+          filter(Outting == data$Outting[i])
+        end_score <- as.numeric(max(score$`Home's Runs`))
+
+        # Find the score at the time the instance occurred 
+        runs <- as.numeric(data$Runs[i])
+
+        # Find the difference between final score of inning and current score 
+        difference <- end_score - runs
+        data$instances_runs[i] = difference 
       }
-            return(data)
+      return(data)
     }
     
-    # For each inning played 
-    num_innings <- 1
-    for (i in 1:num_innings) {
-      # For each instance 
-      for (current_instance in instance_list) {
-        instances_runs_difference <- instances %>%
-          # Away team first 
-          filter(Team == as.character(" Away")) %>%
-          # Filter for a given instance
-          filter(instance == as.character(current_instance)) %>%
-          mutate(instances_runs = NA)
-        
-        # Call function to return data frame with differences calculated 
-        # Pass in the data set for that instance and the corresponding inning (i)
-        differences <- calc_difference(instances_runs_difference, i)
+    # For each instance 
+    for (current_instance in instance_list) {
+      print(current_instance)
+      instances_runs_difference <- instances %>%
+        # Filter for a given instance
+        filter(instance == as.character(current_instance)) %>%
+        mutate(instances_runs = NA)
 
-        # Add to data frame
-        new_data <- rbind(new_data,differences)
-      }
+      # Call function to return data frame with differences calculated 
+      # Pass in the data set for that instance
+      differences <- calc_difference(instances_runs_difference)
+
+      # Add to data frame
+      new_data <- bind_rows(new_data,differences)
     }
   
   # Step 3: Divide by the total number of instances to get the averages 
     RE24_data <- new_data %>%
       # Runs scored / number of instances 
-      mutate(RE = instances_runs / num_instance)
+      group_by(instance) %>%
+      mutate(total_runs = sum(instances_runs)) %>%
+      mutate(RE = total_runs / num_instance)
+    
+    RE24_viz <- RE24_data %>% ggplot(aes(x = Runners, y = Outs)) +
+      geom_tile(aes(fill = RE)) +
+      geom_text(aes(label=round(RE,2))) +
+      scale_fill_gradient(low = "yellow", high = "red", na.value = NA)
 
 
