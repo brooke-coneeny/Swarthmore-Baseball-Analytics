@@ -7,3 +7,5 @@ GameTracker: Shiny App which I created to help gain pitch-by-pitch data during g
 - This app records the name of the batter and pitcher, how many runners are on base, the count, number of outs, and score 
 
 RE24_matrx: This script is where I am trying to create a Run Expectancy matrix that will be specific for the team
+
+STATS: This script is where I am calculating stats from the play-by-play data such as K%, swing-miss%, etc. 
