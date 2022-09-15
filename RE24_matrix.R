@@ -95,13 +95,17 @@ GameData <- read_excel(path = "TotalInnerSquadFall.xlsx", col_names = TRUE)
 
       # For each time this situation occurred 
       for (i in 1:nrow(data)) {
+        # What Outting is it? 
+        curr_outting <- data[i,]$Outting
+        
         # Find the score at the end of the current inning 
-        score <- data %>%
-          filter(Outting == data$Outting[i])
+        score <- instances %>%
+          filter(Outting == curr_outting)
+        
         end_score <- as.numeric(max(score$`Home's Runs`))
 
         # Find the score at the time the instance occurred 
-        runs <- as.numeric(data$Runs[i])
+        runs <- as.numeric(data$`Home's Runs`[i])
 
         # Find the difference between final score of inning and current score 
         difference <- end_score - runs
@@ -111,7 +115,9 @@ GameData <- read_excel(path = "TotalInnerSquadFall.xlsx", col_names = TRUE)
     }
     
     # For each instance 
-    for (current_instance in instance_list) {
+    innerSquadInstances <- unique(na.omit(instances$instance, i))
+    
+    for (current_instance in innerSquadInstances) {
       print(current_instance)
       instances_runs_difference <- instances %>%
         # Filter for a given instance
@@ -133,9 +139,19 @@ GameData <- read_excel(path = "TotalInnerSquadFall.xlsx", col_names = TRUE)
       mutate(total_runs = sum(instances_runs)) %>%
       mutate(RE = total_runs / num_instance)
     
-    RE24_viz <- RE24_data %>% ggplot(aes(x = Runners, y = Outs)) +
+    RE24_viz <- na.omit(RE24_data) %>% ggplot(aes(x = Runners, y = Outs)) +
       geom_tile(aes(fill = RE)) +
       geom_text(aes(label=round(RE,2))) +
-      scale_fill_gradient(low = "yellow", high = "red", na.value = NA)
+      scale_fill_distiller(palette = "Reds", direction = 1) +
+      #scale_fill_gradient(low = "yellow", high = "red", na.value = NA) +
+      labs(
+        x = "Runners",
+        y = "Outs",
+        title = "Run-Expectancy Matrix"
+      ) +
+      theme(axis.text = element_text(size=12),
+            axis.title = element_text(size=14,face="bold"),
+            plot.title = element_text(size = 24, hjust = 0.5),
+            legend.position = "none")
 
 

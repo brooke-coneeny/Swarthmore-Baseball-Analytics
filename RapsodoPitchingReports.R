@@ -27,21 +27,25 @@ RPdoc <- image_read_pdf("SwatBaseballReportBlank.pdf")
 pitchSilhouette <- image_read("pitcherSilhouette.png")
 
 # Location of data for practice
-setwd("C:/Users/bcone/Downloads/Swat Baseball")
+setwd("C:/Users/bcone/Downloads/Swat Baseball/Data/Rapsodo Data")
 
 # Collected Rapsodo pitching data 
 internal <- read_excel(path = "Swat Baseball Roster 2022_2023.xlsx", col_names = TRUE) 
-RapPitch <- read_excel(path = "Swat Baseball Example Data.xlsx", col_names = TRUE) 
+RapPitch <- read_excel(path = "RapPitch-9-5-22.xlsx", col_names = TRUE) 
 
 # Format player names to match Rapsodo data files
 internal$RapNames <- paste(internal$`First Name`, internal$`Last Name`, sep="")
 
+# Date data was collected
+BP_Date <- "9/5/2022"
+
 for (i in 1:nrow(internal)) {
   indPlayerData <- subset(internal[i,])
-  
+
   # Create pitching sheet 
   if (indPlayerData$RapNames[1] %in% gsub(" ","",RapPitch$`Player Name`)) {
     rapPitchPlayer <- RapPitch %>% filter(gsub(" ","",RapPitch$`Player Name`) == indPlayerData$RapNames[1])
+    #rapPitchPlayer <- RapPitch %>% filter(gsub(" ","",RapPitch$`Player Name`) == "StevenEchavarria")
     rapPitchPlayer <- rapPitchPlayer %>% filter(Spin != '-' & rapPitchPlayer$`Spin Efficiency (release)` != '-')
     rapPitchPlayer$Spin <- as.numeric(as.character(rapPitchPlayer$Spin))
     rapPitchPlayer$`Spin Efficiency (release)` <- as.numeric(as.character(rapPitchPlayer$`Spin Efficiency (release)`))
@@ -50,8 +54,8 @@ for (i in 1:nrow(internal)) {
     rapPitchPlayer$`VB (spin)` <- as.numeric(as.character(rapPitchPlayer$`VB (spin)`))
     rapPitchPlayer$`HB (spin)` <- as.numeric(as.character(rapPitchPlayer$`HB (spin)`))
     rapPitchPlayer$`Release Angle` <- as.numeric(as.character(rapPitchPlayer$`Release Angle`))
-    rapPitchPlayer$`Release Height` <- as.numeric(as.character(rapPitchPlayer$`Release Height`))
-    rapPitchPlayer$`Release Side` <- as.numeric(as.character(rapPitchPlayer$`Release Side`))
+    rapPitchPlayer$`Release Height (ft)` <- as.numeric(as.character(rapPitchPlayer$`Release Height (ft)`))
+    rapPitchPlayer$`Release Side (ft)` <- as.numeric(as.character(rapPitchPlayer$`Release Side (ft)`))
     rapPitchPlayer$`Gyro Degree (deg)` <- as.numeric(as.character(rapPitchPlayer$`Gyro Degree (deg)`))
     rapPitchPlayer$`Strike Zone Side` <- as.numeric(as.character(rapPitchPlayer$`Strike Zone Side`))
     rapPitchPlayer$`Strike Zone Height` <- as.numeric(as.character(rapPitchPlayer$`Strike Zone Height`))
@@ -67,11 +71,11 @@ for (i in 1:nrow(internal)) {
       theme(legend.title= element_blank(), legend.text=element_text(size=6), plot.margin = margin(t = 10, r = 225, b = 10, l = 225)) + guides(colour = guide_legend(nrow = 1))
     
     releasePlot <- rapPitchPlayer %>%
-      ggplot(aes(x = `Release Side`, y = `Release Height`)) + geom_point(aes(color = `Pitch Type`), show.legend = FALSE) + 
+      ggplot(aes(x = `Release Side (ft)`, y = `Release Height (ft)`)) + geom_point(aes(color = `Pitch Type`), show.legend = FALSE) + 
       scale_color_manual(values = cols) + xlab("Release Side (ft)") + ylab("Release Height (ft)") +  
       theme(text = element_text(size = 15), panel.grid.major = element_line(linetype = "solid", colour = "#EEEEEE"), legend.position = "none") + 
-      xlim(-max(abs(rapPitchPlayer$`Release Side`)), max(abs(rapPitchPlayer$`Release Side`))) + 
-      ylim(4.5,max(rapPitchPlayer$`Release Height`)) 
+      xlim(-max(abs(rapPitchPlayer$`Release Side (ft)`)), max(abs(rapPitchPlayer$`Release Side (ft)`))) + 
+      ylim(4.5,max(rapPitchPlayer$`Release Height (ft)`)) 
     
     velocityPlot <- rapPitchPlayer %>%
       group_by(`Pitch Type`) %>%
@@ -84,11 +88,11 @@ for (i in 1:nrow(internal)) {
       ) +
       theme(legend.position = "None")
     
-    if (mean(rapPitchPlayer$`Release Side`) < 0) {
+    if (mean(rapPitchPlayer$`Release Side (ft)`) < 0) {
       releasePlot <- ggdraw() + draw_image(image_flop(pitchSilhouette), scale = 0.47, x = 0.05, y = -0.05) + draw_plot(releasePlot)
     }
     
-    if (mean(rapPitchPlayer$`Release Side`) > 0) {
+    if (mean(rapPitchPlayer$`Release Side (ft)`) > 0) {
       releasePlot <- ggdraw() + draw_image(pitchSilhouette, scale = 0.47, x = 0.1, y = -0.05) + draw_plot(releasePlot)
     }
     
@@ -98,6 +102,9 @@ for (i in 1:nrow(internal)) {
       xlab("Strike Zone Side (in)") + ylab("Strike Zone Height (in)") + 
       theme(text = element_text(size = 15), panel.grid.major = element_line(linetype = "solid", colour = "#EEEEEE"), legend.position = "none") + 
       xlim(-35,35) + ylim(0,60)
+    
+    # Set location
+    setwd("C:/Users/bcone/Downloads/Swat Baseball")
     
     ggsave(filename = paste0("Pitching Reports/", internal$`Last Name`[i], internal$`First Name`[i],"HBVB",".png"), plot = HBVBPlot, width=8.875,height=3.7,units="in",dpi=265)
     ggsave(filename = paste0("Pitching Reports/", internal$`Last Name`[i], internal$`First Name`[i],"releaseLoc",".png"), plot = releasePlot, width=2.7,height=3,units="in",dpi=265)
@@ -126,8 +133,8 @@ for (i in 1:nrow(internal)) {
       rapPitchAvgs[j,"AVG Velo"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% summarise(round(mean(Speed), 1))
       rapPitchAvgs[j,"MAX Velo"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% summarise(round(max(Speed), 1))
       rapPitchAvgs[j,"MIN Velo"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% summarise(round(min(Speed), 1))
-      rapPitchAvgs[j,"Release Height"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% summarise(round(mean(`Release Height`), 1))
-      rapPitchAvgs[j,"Release Side"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% summarise(round(mean(`Release Side`), 1))
+      rapPitchAvgs[j,"Release Height"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% summarise(round(mean(`Release Height (ft)`), 1))
+      rapPitchAvgs[j,"Release Side"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% summarise(round(mean(`Release Side (ft)`), 1))
       rapPitchAvgs[j,"Release Angle"] <- rapPitchPlayer %>% filter(`Pitch Type` == pitch_type) %>% summarise(round(mean(`Release Angle`), 1))
     }
     
@@ -142,9 +149,9 @@ for (i in 1:nrow(internal)) {
     RPdoc <- image_composite(RPdoc, velocity_pic, offset = "+1700+2125")
     RPdoc <- image_composite(RPdoc, SZ_pic, offset = "+100+2125")
     
-    RPdoc <- image_annotate(RPdoc, paste0(rapPitchPlayer$`Player Name`), gravity = "center", size = 50, location = "+5-1350")
-    RPdoc <- image_annotate(RPdoc, paste0(rapPitchPlayer$Date), gravity = "center", size = 25, location = "+5-1200")
-    
+    RPdoc <- image_annotate(RPdoc, paste0(internal$`First Name`[i], " ", internal$`Last Name`[i]), gravity = "center", size = 50, location = "+5-1350")
+    RPdoc <- image_annotate(RPdoc, paste0(BP_Date), gravity = "center", size = 25, location = "+5-1200")
+
     if (!is.na(rapPitchAvgs["Fastball", 1])) {
       RPdoc <- image_annotate(RPdoc, as.character(rapPitchAvgs["Fastball",1]), gravity = "center", font = "DIN Condensed", size = 10.5, location = "-695-930")
       RPdoc <- image_annotate(RPdoc, paste0(round(rapPitchAvgs["Fastball",13], 1), " MPH"), gravity = "center", font = "DIN Condensed", size = 10.5, location = "-410-930")
@@ -305,10 +312,8 @@ for (i in 1:nrow(internal)) {
       RPdoc <- image_annotate(RPdoc, paste0(round(rapPitchAvgs["Sinker",16], 1), "°"), gravity = "center", font = "DIN Condensed", size = 10.5, location = "+1020+395")
     } 
     
+    # Write final document to wd
+    image_write(RPdoc,path=paste0("Pitching Reports/", internal$`Last Name`[i],internal$`First Name`[i],"Pitching.pdf"),format="pdf", quality = 100,density = 300)
     
   }
-  
-  # Write final document to wd
-  image_write(RPdoc,path=paste0("Pitching Reports/", internal$`Last Name`[i],internal$`First Name`[i],"Pitching.pdf"),format="pdf", quality = 100,density = 300)
-  
 }
