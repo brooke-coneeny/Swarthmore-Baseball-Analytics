@@ -1,0 +1,14 @@
+name: Swarthmore-Trackman
+title: Swarthmore-Trackman
+username:
+account: bconeeny
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 7270660
+bundleId: 6389899
+url: https://bconeeny.shinyapps.io/Swarthmore-Trackman/
+when: 1665457858.87961
+lastSyncTime: 1665457858.87963
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: RapsodoPitchingReports.R|RE24_matrix.R|STATS.R|SwatBaseballReportBlank.pdf
