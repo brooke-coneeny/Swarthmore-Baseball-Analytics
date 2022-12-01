@@ -6,6 +6,7 @@ library(data.table)
 library(openxlsx)
 
 library(googlesheets4)
+library(googledrive)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -14,7 +15,7 @@ ui <- fluidPage(
     titlePanel("Game Tracker"),
     
     sidebarPanel(
-      # Text Input: Game titel
+      # Text Input: Game title
       textInput("date", "Date", " "),
       verbatimTextOutput("title"),
       
@@ -121,16 +122,8 @@ server <- function(input, output) {
   save_event <- observeEvent(input$end, {
     title <- paste0(input$date, ".csv")
     print(title)
-   readr::write_csv(values$Total, title)
+    readr::write_csv(values$Total, title)
   })
-  
-   #save_event <- observeEvent(input$end, {
-     #df<- read_sheet("https://docs.google.com/spreadsheets/d/17lvscXOrJalEBXJLg61s5THsioNy4_X3em7bhBZTjB8/edit#gid=0")
-     #ss1 <- gs4_create("baseball-game-data")
-     #random_ss <- sheet_write(values$Total)
-     #sheet_write(values$Total, ss = ss1)
-   #})
-  
  
 }
 
