@@ -8,7 +8,18 @@ library(openxlsx)
 library(googlesheets4)
 library(googledrive)
 
-# Define UI for application that draws a histogram
+# Authenticating Google Drive 
+options(
+  # whenever there is one account token found, use the cached token
+  gargle_oauth_email = TRUE,
+  # specify auth tokens should be stored in a hidden directory ".secrets"
+  gargle_oauth_cache = "Swarthmore-Baseball-Analytics/.secrets"
+)
+
+# Get the ID of the sheet for writing programmatically
+sheet_id <- drive_get("swarthmore_baseball")$id
+
+# Define UI for application 
 ui <- fluidPage(
   
     # Application title
@@ -154,15 +165,34 @@ server <- function(input, output) {
   
   # Display the entire data set 
   output$table2 <- renderTable({ values$Total })
-  
+
   # Display scoreboard
   output$table3 <- renderTable({ values$Score })
   
   # Save data to a csv
   save_event <- observeEvent(input$end, {
-    title <- paste0(input$date, ".csv")
-    print(title)
-    readr::write_csv(values$Total, title)
+    #title <- paste0(input$date, ".csv")
+    #print(title)
+    #readr::write_csv(values$Total, title)
+    
+    # Table with all of the data 
+    individualData <- values$Total
+
+    # Read in the sheet
+    values <- read_sheet(ss = sheet_id, sheet = "main")
+    
+    # Check to see if our sheet has any data, if not write to it and set up column names,
+    # Otherwise, append to it
+    if (nrow(values) == 0) {
+      sheet_write(data = individualData,
+                  ss = sheet_id,
+                  sheet = "main")
+    } else {
+      sheet_append(data = individualData,
+                   ss = sheet_id,
+                   sheet = "main")
+    }
+    
   })
  
 }
