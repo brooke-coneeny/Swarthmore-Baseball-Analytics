@@ -193,6 +193,7 @@ server <- function(input, output) {
                    sheet = "main")
     }
     
+    stopApp(returnValue = invisible())
   })
  
 }
