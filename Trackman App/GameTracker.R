@@ -46,54 +46,73 @@ ui <- fluidPage(
                
       ),
       tabPanel("Play Information",
-               sidebarPanel(
-                 # Text Input: who is up to bat?
-                 textInput("batterName", "Batter's Name", " "),
-                 verbatimTextOutput("batterName"),
-                 
-                 # Text Input: who is pitching? 
-                 textInput("pitcherName", "Pitcher's Name", " "),
-                 verbatimTextOutput("pitcherName"),
-                 
-                 # Text Input: home or away? 
-                 textInput("team", "Team Hitting", " "),
-                 verbatimTextOutput("team"),
-                 
-                 # Select Input: what inning is it?
-                 textInput("inning", "Inning", "1"),
-                 verbatimTextOutput("inning"),
-                 
-                 # Select Input: how many outs are there?
-                 selectInput("numberOuts", "Outs", c(0,1,2,3)),
-                 
-                 # Select Input: where are the runners?
-                 selectInput("baseRunners", "Runners on Base", c("None", "1st", "2nd", "3rd", "1st & 2nd", "1st & 3rd", "2nd & 3rd", "Loaded")),
-                 
-                 # Button: submit data that goes alongside the pitch thrown
-                 actionButton("submit", "Submit"),
-                 
-                 # Button: saves the data 
-                 actionButton("end", "Save Data"),
-               ),
-               mainPanel(
-                 # Button: what is the count?        
-                 selectInput("strike", "Strike", c(0,1,2,3)),
-                 selectInput("strikeType", "Strike Type", c("NA", "Swinging", "Looking", "Foul")),
-                 selectInput("ball", "Ball", c(0,1,2,3,4)),
-                 
-                 # Button: what is the outcome of the at bat? 
-                 selectInput("outcome", "Outcome", c("NULL", "Out", "Strike Out", "Single", "Double", "Triple", "HR", "Walk", "HBP", "Sac Fly", "Sac Bunt", "Squeeze Bunt", "Error", "Intentional Walk", "Fielder's Choice", "Double Play", "Triple Play")),
-                 
-                 # Select Input: how many RBI's
-                 selectInput("rbi", "RBI's", c(0,1,2,3,4)),
-                 
-                 # Select Input: how many runs
-                 selectInput("runs", "Runs", c(0,1,2,3,4)),
-                 
-                 # Text Input: how many runs score that inning? 
-                 numericInput("runshome", "Home's Runs", 0),
-                 numericInput("runsaway", "Away's Runs", 0),
-               ),
+               fluidPage(
+                 fluidRow(
+                   column(2, 
+                          # Text Input: who is up to bat?
+                          textInput("batterName", "Batter's Name", " "),
+                          verbatimTextOutput("batterName"),
+                          
+                          # Text Input: who is pitching? 
+                          textInput("pitcherName", "Pitcher's Name", " "),
+                          verbatimTextOutput("pitcherName"),
+                          
+                          # Text Input: home or away? 
+                          textInput("team", "Team Hitting", " "),
+                          verbatimTextOutput("team"),
+                          
+                          # Select Input: what inning is it?
+                          textInput("inning", "Inning", "1"),
+                          verbatimTextOutput("inning"),
+                          
+                          # Select Input: where are the runners?
+                          selectInput("baseRunners", "Runners on Base", c("None", "1st", "2nd", "3rd", "1st & 2nd", "1st & 3rd", "2nd & 3rd", "Loaded")),
+                          
+                          # Select Input: how many outs are there?
+                          selectInput("numberOuts", "Outs", c(0,1,2,3)),
+                   ),
+                   column(3,
+                          # Button: what is the outcome of the at bat? 
+                          selectInput("outcome", "Outcome", c("NULL", "Out", "Strike Out", "Single", "Double", "Triple", "HR", "Walk", "HBP", "Sac Fly", "Sac Bunt", "Squeeze Bunt", "Error", "Intentional Walk", "Fielder's Choice", "Double Play", "Triple Play")),
+                          
+                          # Select Input: where was it hit?
+                          textInput("location", "Location of Ball in Play", " "),
+                          verbatimTextOutput("location"),
+
+                          # Select Input: how many RBI's
+                          selectInput("rbi", "RBI's", c(0,1,2,3,4)),
+                          
+                          # Select Input: how many runs
+                          selectInput("runs", "Runs", c(0,1,2,3,4)),
+                          
+                          # Text Input: how many runs score that inning? 
+                          numericInput("runshome", "Home's Runs", 0),
+                          numericInput("runsaway", "Away's Runs", 0),
+                   ),
+                   column(2, 
+                          # Button: what is the count?        
+                          selectInput("strike", "Strike", c(0,1,2,3)),
+                          selectInput("strikeType", "Strike Type", c("NA", "Swinging", "Looking", "Foul")),
+                          selectInput("ball", "Ball", c(0,1,2,3,4)),
+                   ),
+                   column(5, 
+                          # Add field image 
+                          tags$img(src = "ShinyAppField.png", 
+                                   height = "700px",
+                                   width = "700px",
+                                   align = "center",
+                                   deleteFile = FALSE),
+                   )
+                 ),
+                 fluidRow(
+                   column(2,
+                          # Button: submit data that goes alongside the pitch thrown
+                          actionButton("submit", "Submit"),
+                          
+                          # Button: saves the data 
+                          actionButton("end", "Save Data"),)
+                 )
+              )
         ),
         tabPanel("Table Output",
                # Output tables 
@@ -107,12 +126,12 @@ ui <- fluidPage(
 server <- function(input, output) {
 
   # Data table holding the entire play-by-play for the game 
-  individualData = data.table(matrix(ncol = 15))
-  names(individualData)=c("Date", "Batter's Name", "Pitcher's Name", "Team", "Inning", "Outs","Runners","Strikes", "Strike Type", "Balls","Outcome", "RBI's", "Runs", "Away's Runs", "Home's Runs")
+  individualData = data.table(matrix(ncol = 16))
+  names(individualData)=c("Date", "Batter's Name", "Pitcher's Name", "Team", "Inning", "Outs","Runners","Strikes", "Strike Type", "Balls","Outcome", "Location", "RBI's", "Runs", "Away's Runs", "Home's Runs")
   
   # Data table holding the play-by-play for the current pitch
-  temp = as.data.frame(matrix(data = NA, nrow = 1, ncol = 15))
-  names(temp)=c("Date", "Batter's Name", "Pitcher's Name", "Team", "Inning", "Outs","Runners","Strikes", "Strike Type", "Balls","Outcome", "RBI's", "Runs", "Away's Runs", "Home's Runs")
+  temp = as.data.frame(matrix(data = NA, nrow = 1, ncol = 16))
+  names(temp)=c("Date", "Batter's Name", "Pitcher's Name", "Team", "Inning", "Outs","Runners","Strikes", "Strike Type", "Balls","Outcome", "Location", "RBI's", "Runs", "Away's Runs", "Home's Runs")
   
   # Data table holding the score of the game 
   scoreBoard = as.data.frame(matrix(data = NA, ncol = 10, nrow = 2))
@@ -138,6 +157,7 @@ server <- function(input, output) {
     values$Part[1,]$`Strike Type`=input$strikeType
     values$Part[1,]$Balls=input$ball   
     values$Part[1,]$Outcome=input$outcome
+    values$Part[1,]$Location=input$location
     values$Part[1,]$`RBI's`=input$rbi
     values$Part[1,]$Runs=input$runs
     
