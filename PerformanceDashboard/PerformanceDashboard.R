@@ -82,7 +82,6 @@ server <- function(input, output) {
   
   # Creating hitting statistics for the team
   team_hitting_statistics <- data.frame(matrix(NA, ncol = 6, nrow = length(roster_batter)))
-  row.names(team_hitting_statistics) <- unique(roster_batter)
   colnames(team_hitting_statistics) <- c("Name", "1B","2B","3B","HR","BB")
   for (i in 1:length(roster_batter)) {
     
