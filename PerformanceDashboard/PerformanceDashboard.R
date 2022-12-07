@@ -39,6 +39,7 @@ ui <- fluidPage(
                tabPanel(title = "Individuals",
                         # Select the individual you want to examine
                         selectInput("batter", "Batter", c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk terada-Herze", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")),
+                        tableOutput("hittingData"),
                             # Output table for their specific statistics
                             # Output visual of where most of their hits fall 
                )
@@ -70,18 +71,27 @@ ui <- fluidPage(
 
 
 server <- function(input, output) {
-  # Making our total data set a reactive value so that it continues to update 
-  values <- reactiveValues(Pitchers = pitcher_data)
+  # Empty data frames for individual pitching and hitting data 
+  pitcher_data <- data.table(matrix(ncol = 16))
+  hitting_data <- data.table(matrix(ncol = 16))
   
-  # Observe event
+  # Making our total data set a reactive value so that it continues to update 
+  values <- reactiveValues(Pitchers = pitcher_data, Hitters = hitting_data)
+  
+  # Observe pitching event
   current_event <- observeEvent(input$pitcher, {
-    print(input$pitcher)
-    values$pitcher_data <- innerSquad %>% filter(`Pitcher's Name` == input$pitcher)
-    print(head(values$pitcher_data))
+    values$Pitchers <- innerSquad %>% filter(`Pitcher's Name` == input$pitcher)
+  })
+  
+  # Observe hitting event
+  current_event <- observeEvent(input$batter, {
+    values$Hitters <- innerSquad %>% filter(`Batter's Name` == input$batter)
   })
   
   # Show pitcher data 
-  output$pitcherData <- renderTable({ values$pitcher_data })
+  output$pitcherData <- renderTable({ values$Pitchers })
+  output$hittingData <- renderTable({ values$Hitters })
+  
 }
 
 # Run the application 
