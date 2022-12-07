@@ -73,10 +73,31 @@ ui <- fluidPage(
 
 
 server <- function(input, output) {
+  roster_batter <- c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk terada-Herze", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")
+  
   # Empty data frames for individual pitching and hitting data 
   pitcher_data <- data.table(matrix(ncol = 16))
   hitting_data <- data.table(matrix(ncol = 16))
-  team_hitting <- data.table(matrix(ncol = 16))
+  team_hitting <- data.frame(matrix(NA, nrow = length(roster_batter), ncol = 6))
+  
+  # Creating hitting statistics for the team
+  team_hitting_statistics <- data.frame(matrix(NA, ncol = 6, nrow = length(roster_batter)))
+  row.names(team_hitting_statistics) <- unique(roster_batter)
+  colnames(team_hitting_statistics) <- c("Name", "1B","2B","3B","HR","BB")
+  for (i in 1:length(roster_batter)) {
+    
+    # Select pitcher of interest
+    current_batter <- roster_batter[i]
+    
+    # Add to table
+    team_hitting_statistics[i,"Name"] <- current_batter
+    team_hitting_statistics[i,"1B"] <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome == "Single") %>% nrow()
+    team_hitting_statistics[i,"2B"] <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome == "Double") %>% nrow()
+    team_hitting_statistics[i,"3B"] <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome == "Triple") %>% nrow()
+    team_hitting_statistics[i,"HR"] <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome == "HR") %>% nrow()
+    team_hitting_statistics[i,"BB"] <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome == "Walk") %>% nrow()
+    
+  }
   
   # Making our total data set a reactive value so that it continues to update 
   values <- reactiveValues(Pitchers = pitcher_data, Hitters = hitting_data, TeamHitting = team_hitting)
@@ -93,7 +114,7 @@ server <- function(input, output) {
   
   # Observe team hitting
   current_event <- observeEvent(input$viewTeamHitting, {
-    values$TeamHitting <- innerSquad 
+    values$TeamHitting <- team_hitting_statistics 
   })
   
   # Show pitcher data 
