@@ -31,6 +31,8 @@ ui <- fluidPage(
              navlistPanel(
                tabPanel(title = "Team Statistics",
                         # Output table showing the statistics for the team
+                        actionButton("viewTeamHitting", "View Team Stats"),
+                        tableOutput("teamHitting"),
                ),
                tabPanel(title = "Visuals"
                         # Graph showing where most of the teams hits fall
@@ -74,9 +76,10 @@ server <- function(input, output) {
   # Empty data frames for individual pitching and hitting data 
   pitcher_data <- data.table(matrix(ncol = 16))
   hitting_data <- data.table(matrix(ncol = 16))
+  team_hitting <- data.table(matrix(ncol = 16))
   
   # Making our total data set a reactive value so that it continues to update 
-  values <- reactiveValues(Pitchers = pitcher_data, Hitters = hitting_data)
+  values <- reactiveValues(Pitchers = pitcher_data, Hitters = hitting_data, TeamHitting = team_hitting)
   
   # Observe pitching event
   current_event <- observeEvent(input$pitcher, {
@@ -88,9 +91,15 @@ server <- function(input, output) {
     values$Hitters <- innerSquad %>% filter(`Batter's Name` == input$batter)
   })
   
+  # Observe team hitting
+  current_event <- observeEvent(input$viewTeamHitting, {
+    values$TeamHitting <- innerSquad 
+  })
+  
   # Show pitcher data 
   output$pitcherData <- renderTable({ values$Pitchers })
   output$hittingData <- renderTable({ values$Hitters })
+  output$teamHitting <- renderTable({ values$TeamHitting })
   
 }
 
