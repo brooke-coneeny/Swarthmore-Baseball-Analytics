@@ -4,14 +4,19 @@ library(DT)
 library(tidyverse)
 library(data.table)
 library(openxlsx)
+library(readxl)
 
 library(googlesheets4)
 library(googledrive)
 
 library(shinythemes)
 
+# Read in sample data 
+innerSquad <- read_excel(path = "TotalInnerSquadFall.xlsx", col_names = TRUE)
+
 # Define UI for application 
 ui <- fluidPage(
+  
   # Theme
   theme = shinytheme("sandstone"),
   
@@ -24,15 +29,16 @@ ui <- fluidPage(
     tabPanel("Offense",
              # Filter for specific opponent or all opponents
              navlistPanel(
-               tabPanel(title = "Team Statistics"
+               tabPanel(title = "Team Statistics",
                         # Output table showing the statistics for the team
                ),
                tabPanel(title = "Visuals"
                         # Graph showing where most of the teams hits fall
                         # Run expectancy Matrix
                ),
-               tabPanel(title = "Individuals"
+               tabPanel(title = "Individuals",
                         # Select the individual you want to examine
+                        selectInput("batter", "Batter", c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk terada-Herze", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")),
                             # Output table for their specific statistics
                             # Output visual of where most of their hits fall 
                )
@@ -51,7 +57,9 @@ ui <- fluidPage(
                ),
                tabPanel(title = "Individuals",
                         # Select the individual you want to examine
-                            # Graph showing proportion of outcomes (bar graph)
+                        selectInput("pitcher", "Pitcher", c("Alex Rimerman", "Casey Jordan", "Ethan Weiss", "Jeremy Jensen", "Josh Rankey", "Liam Alpern", "Matt Silvestre", "Steven Jungers")),
+                        tableOutput("pitcherData"),
+                        # Graph showing proportion of outcomes (bar graph)
                             # Matrix showing chance of getting an out given count and runners on base 
                             # Run expectancy matrix of opponents 
                )
@@ -62,7 +70,17 @@ ui <- fluidPage(
 
 
 server <- function(input, output) {
+  # Making our total data set a reactive value so that it continues to update 
+  values <- reactiveValues(Pitchers = innerSquad)
   
+  # Observe event
+  current_event <- observeEvent(input$pitcher, {
+    print(input$pitcher)
+    Pitchers <- innerSquad %>% filter(`Pitcher's Name` == input$pitcher)
+  })
+  
+  # Show pitcher data 
+  output$pitcherData <- renderTable({ values$Pitchers })
 }
 
 # Run the application 

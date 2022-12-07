@@ -8,7 +8,6 @@ library(openxlsx)
 library(readxl)
 
 # Load in team inner squad data 
-setwd("C:/Users/bcone/Downloads/Swat Baseball/Data")
 innerSquad <- read_excel(path = "TotalInnerSquadFall.xlsx", col_names = TRUE) 
 
 # List of pitchers 
