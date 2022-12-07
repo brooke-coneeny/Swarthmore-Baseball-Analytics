@@ -71,16 +71,17 @@ ui <- fluidPage(
 
 server <- function(input, output) {
   # Making our total data set a reactive value so that it continues to update 
-  values <- reactiveValues(Pitchers = innerSquad)
+  values <- reactiveValues(Pitchers = pitcher_data)
   
   # Observe event
   current_event <- observeEvent(input$pitcher, {
     print(input$pitcher)
-    Pitchers <- innerSquad %>% filter(`Pitcher's Name` == input$pitcher)
+    values$pitcher_data <- innerSquad %>% filter(`Pitcher's Name` == input$pitcher)
+    print(head(values$pitcher_data))
   })
   
   # Show pitcher data 
-  output$pitcherData <- renderTable({ values$Pitchers })
+  output$pitcherData <- renderTable({ values$pitcher_data })
 }
 
 # Run the application 
