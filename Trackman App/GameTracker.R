@@ -21,6 +21,8 @@ sheet_id <- drive_get("swarthmore_baseball")$id
 
 # Define UI for application 
 ui <- fluidPage(
+    # Theme
+    theme = shinytheme("sandstone"),
   
     # Application title
     titlePanel("Swarthmore Baseball"),
@@ -29,6 +31,10 @@ ui <- fluidPage(
     navbarPage(
       "Trackman",
       tabPanel("Game Information",
+               # Text Input: Game name
+               textInput("gamename", "Game Name", " "),
+               verbatimTextOutput("gamename"),
+               
                # Text Input: Game title
                textInput("date", "Date", " "),
                verbatimTextOutput("title"),
@@ -197,20 +203,24 @@ server <- function(input, output) {
     
     # Table with all of the data 
     individualData <- values$Total
-
+    
+    # Name of the game 
+    game_name <- input$gamename
+    game_name <- gsub(" ", "", game_name)
+    
     # Read in the sheet
-    values <- read_sheet(ss = sheet_id, sheet = "main")
+    values <- read_sheet(ss = sheet_id, sheet = game_name)
     
     # Check to see if our sheet has any data, if not write to it and set up column names,
     # Otherwise, append to it
     if (nrow(values) == 0) {
       sheet_write(data = individualData,
                   ss = sheet_id,
-                  sheet = "main")
+                  sheet = game_name)
     } else {
       sheet_append(data = individualData,
                    ss = sheet_id,
-                   sheet = "main")
+                   sheet = game_name)
     }
     
     stopApp(returnValue = invisible())
