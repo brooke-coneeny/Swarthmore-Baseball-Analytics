@@ -12,8 +12,8 @@ library(googledrive)
 library(shinythemes)
 
 # Read in sample data 
-innerSquad <- read_excel(path = "TotalInnerSquadFall.xlsx", col_names = TRUE)
-current_data <- read_csv("swarthmore_baseball - JeterGame.csv")
+current_data <- read_excel(path = "TotalInnerSquadFall.xlsx", col_names = TRUE)
+#current_data <- read_csv("swarthmore_baseball - JeterGame.csv")
 
 # Define UI for application 
 ui <- fluidPage(
@@ -41,11 +41,12 @@ ui <- fluidPage(
                ),
                tabPanel(title = "Individuals",
                         # Select the individual you want to examine
-                        #selectInput("batter", "Batter", c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk Terada-Herzer", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")),
-                        selectInput("batter", "Batter", c("Brett Gardner", "Derek Jeter", "Brian McCann", "Mark Teixeira", "Chase Headley", "Chris Young", "Stephen Drew")),
+                        selectInput("batter", "Batter", c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk Terada-Herzer", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")),
+                        #selectInput("batter", "Batter", c("Brett Gardner", "Derek Jeter", "Brian McCann", "Mark Teixeira", "Chase Headley", "Chris Young", "Stephen Drew")),
+                        # Output table for their specific statistics
                         tableOutput("hittingData"),
-                            # Output table for their specific statistics
-                            # Output visual of where most of their hits fall 
+                        # Output visuals
+                        plotOutput("individualHitting"),
                )
              ) 
     ),
@@ -75,9 +76,9 @@ ui <- fluidPage(
 
 
 server <- function(input, output) {
-  #roster_batter <- c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk Terada-Herzer", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")
+  roster_batter <- c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk Terada-Herzer", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")
   roster_pitcher <- c("Alex Rimerman", "Casey Jordan", "Ethan Weiss", "Jeremy Jensen", "Josh Rankey", "Liam Alpern", "Matt Silvestre", "Steven Jungers")
-  roster_batter <- c("Brett Gardner", "Derek Jeter", "Brian McCann", "Mark Teixeira", "Chase Headley", "Chris Young", "Stephen Drew")
+  #roster_batter <- c("Brett Gardner", "Derek Jeter", "Brian McCann", "Mark Teixeira", "Chase Headley", "Chris Young", "Stephen Drew")
   
   # Empty data frames for individual pitching and hitting data 
   pitcher_data <- data.table(matrix(ncol = 16))
@@ -140,8 +141,6 @@ server <- function(input, output) {
     team_hitting_statistics[i,"OPS"] <- team_hitting_statistics[i,"OBP"] + team_hitting_statistics[i,"SLG"] 
   }
   
-  # Creating hitting visuals for the team
-  
   # Creating pitching statistics for the team
   team_pitching_statistics <- data.frame(matrix(NA, ncol = 12, nrow = length(roster_pitcher)))
   colnames(team_pitching_statistics) <- c("Name", "ERA", "IP", "H", "R", "ER", "BB", "SO", "2B", "3B", "HR", "AB")
@@ -167,6 +166,16 @@ server <- function(input, output) {
   # Observe hitting event
   current_event <- observeEvent(input$batter, {
     values$Hitters <- team_hitting_statistics %>% filter(Name == input$batter)
+    
+    # Types of outcomes for this batter
+    outcomes_visual <- current_data %>%
+      filter(`Batter's Name` == input$batter & Outcome != "NULL") %>% group_by(Outcome) %>% summarize(total = n()) %>% 
+      ggplot(aes(x = Outcome, y = total)) + geom_col() + theme_bw() +
+      labs(x = " ", y = "Proportion", title = "Outcome Proportions")
+    
+    # Show batter data 
+    output$hittingData <- renderTable({ values$Hitters })
+    output$individualHitting <- renderPlot({ outcomes_visual })
   })
   
   # Observe team hitting
@@ -176,7 +185,8 @@ server <- function(input, output) {
   
   # Show pitcher data 
   output$pitcherData <- renderTable({ values$Pitchers })
-  output$hittingData <- renderTable({ values$Hitters })
+  
+  # Show team data
   output$teamHitting <- renderTable({ values$TeamHitting })
   
 }
