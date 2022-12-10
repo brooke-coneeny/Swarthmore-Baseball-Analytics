@@ -12,8 +12,8 @@ library(googledrive)
 library(shinythemes)
 
 # Read in sample data 
-current_data <- read_excel(path = "TotalInnerSquadFall.xlsx", col_names = TRUE)
-#current_data <- read_csv("swarthmore_baseball - JeterGame.csv")
+#current_data <- read_excel(path = "TotalInnerSquadFall.xlsx", col_names = TRUE)
+current_data <- read_csv("swarthmore_baseball - JeterGame.csv")
 
 # Define UI for application 
 ui <- fluidPage(
@@ -41,8 +41,8 @@ ui <- fluidPage(
                ),
                tabPanel(title = "Individuals",
                         # Select the individual you want to examine
-                        selectInput("batter", "Batter", c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk Terada-Herzer", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")),
-                        #selectInput("batter", "Batter", c("Brett Gardner", "Derek Jeter", "Brian McCann", "Mark Teixeira", "Chase Headley", "Chris Young", "Stephen Drew")),
+                        #selectInput("batter", "Batter", c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk Terada-Herzer", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")),
+                        selectInput("batter", "Batter", c("Brett Gardner", "Derek Jeter", "Brian McCann", "Mark Teixeira", "Chase Headley", "Chris Young", "Stephen Drew")),
                         # Output table for their specific statistics
                         tableOutput("hittingData"),
                         # Output visuals
@@ -53,8 +53,10 @@ ui <- fluidPage(
     tabPanel("Defense",
              # Filter for specific opponent or all opponents
              navlistPanel(
-               tabPanel(title = "Team Statistics"
+               tabPanel(title = "Team Statistics",
                         # Output table showing the statistics for the team
+                        actionButton("viewTeamPitching", "View Team Stats"),
+                        tableOutput("teamPitching"),
                ),
                tabPanel(title = "Visuals"
                         # Graph showing proportion of outcomes (bar graph)
@@ -63,7 +65,8 @@ ui <- fluidPage(
                ),
                tabPanel(title = "Individuals",
                         # Select the individual you want to examine
-                        selectInput("pitcher", "Pitcher", c("Alex Rimerman", "Casey Jordan", "Ethan Weiss", "Jeremy Jensen", "Josh Rankey", "Liam Alpern", "Matt Silvestre", "Steven Jungers")),
+                        #selectInput("pitcher", "Pitcher", c("Alex Rimerman", "Casey Jordan", "Ethan Weiss", "Jeremy Jensen", "Josh Rankey", "Liam Alpern", "Matt Silvestre", "Steven Jungers")),
+                        selectInput("pitcher", "Pitcher", c("Hiroki Kuroda", "Kevin Gausman")),
                         tableOutput("pitcherData"),
                         # Graph showing proportion of outcomes (bar graph)
                             # Matrix showing chance of getting an out given count and runners on base 
@@ -76,9 +79,10 @@ ui <- fluidPage(
 
 
 server <- function(input, output) {
-  roster_batter <- c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk Terada-Herzer", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")
-  roster_pitcher <- c("Alex Rimerman", "Casey Jordan", "Ethan Weiss", "Jeremy Jensen", "Josh Rankey", "Liam Alpern", "Matt Silvestre", "Steven Jungers")
-  #roster_batter <- c("Brett Gardner", "Derek Jeter", "Brian McCann", "Mark Teixeira", "Chase Headley", "Chris Young", "Stephen Drew")
+  #roster_batter <- c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk Terada-Herzer", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")
+  #roster_pitcher <- c("Alex Rimerman", "Casey Jordan", "Ethan Weiss", "Jeremy Jensen", "Josh Rankey", "Liam Alpern", "Matt Silvestre", "Steven Jungers")
+  roster_batter <- c("Brett Gardner", "Derek Jeter", "Brian McCann", "Mark Teixeira", "Chase Headley", "Chris Young", "Stephen Drew")
+  roster_pitcher <- c("Hiroki Kuroda", "Kevin Gausman")
   
   # Empty data frames for individual pitching and hitting data 
   pitcher_data <- data.table(matrix(ncol = 16))
@@ -152,15 +156,39 @@ server <- function(input, output) {
     # Add to table
     team_pitching_statistics[i,"Name"] <- current_pitcher
     # Innings Pitcher
-    #team_pitching_statistics[i,"IP"] <- current_data %>% filter(`Pitcher's Name` == current_pitcher)
+    team_pitching_statistics[i,"IP"] <- current_data %>% filter(`Pitcher's Name` == current_pitcher) %>% group_by(Inning) %>% select(Inning) %>% unique() %>% sum()
+    # Earned Runs: idea is to filter to only hits & sacrifices not errors, then total the runs brought in
+    team_pitching_statistics[i,"ER"] <- current_data %>% filter(`Pitcher's Name` == current_pitcher) %>% filter(Outcome %in% c("Single", "Double", "Triple", "HR", "Sac Fly", "Sac Bunt", "Squeeze")) %>% select(`RBI's`) %>% sum()
+    # Earned run average 
+    team_pitching_statistics[i,"ERA"] <- (team_pitching_statistics[i,"ER"] / team_pitching_statistics[i,"IP"]) * 9
+    # Number of hits
+    team_pitching_statistics[i,"H"] <- current_data %>% filter(`Pitcher's Name` == current_pitcher) %>% filter(Outcome %in% c("Single", "Double", "Triple", "HR")) %>% nrow()
+    # Doubles
+    team_pitching_statistics[i,"2B"] <- current_data %>% filter(`Pitcher's Name` == current_pitcher) %>% filter(Outcome == "Double") %>% nrow()
+    # Triples
+    team_pitching_statistics[i,"3B"] <- current_data %>% filter(`Pitcher's Name` == current_pitcher) %>% filter(Outcome == "Triple") %>% nrow()
+    # Home runs
+    team_pitching_statistics[i,"HR"] <- current_data %>% filter(`Pitcher's Name` == current_pitcher) %>% filter(Outcome == "HR") %>% nrow()
+    # Walks
+    team_pitching_statistics[i,"BB"] <- current_data %>% filter(`Pitcher's Name` == current_pitcher) %>% filter(Outcome == "Walk") %>% nrow()
+    # Number of at-bats
+    team_pitching_statistics[i,"AB"] <- current_data %>% filter(`Pitcher's Name` == current_pitcher) %>% filter(Outcome %in% c("Out", "Strike Out", "Single", "Double", "Triple", "HR", "Error", "Fielder's Choice", "Double Play", "Triple Play")) %>% nrow()
+    # Strikeout percentage
+    team_pitching_statistics[i,"SO"] <- current_data %>% filter(`Pitcher's Name` == current_pitcher) %>% filter(Outcome %in% c("Strike Out")) %>% nrow()
+    # Number of Runs
+    team_pitching_statistics[i,"R"] <- current_data %>% filter(`Pitcher's Name` == current_pitcher) %>% filter(Runs > 0) %>% nrow()
+    
   }
   
   # Making our total data set a reactive value so that it continues to update 
-  values <- reactiveValues(Pitchers = pitcher_data, Hitters = hitting_data, TeamHitting = team_hitting)
+  values <- reactiveValues(Pitchers = pitcher_data, Hitters = hitting_data, TeamHitting = team_hitting, TeamPitching = team_pitching)
   
   # Observe pitching event
   current_event <- observeEvent(input$pitcher, {
-    values$Pitchers <- current_data %>% filter(`Pitcher's Name` == input$pitcher)
+    values$Pitchers <- team_pitching_statistics %>% filter(Name == input$pitcher)
+    
+    # Show pitcher data
+    output$pitchingData <- renderTable({ values$Pitchers })
   })
   
   # Observe hitting event
@@ -183,8 +211,13 @@ server <- function(input, output) {
     values$TeamHitting <- team_hitting_statistics 
   })
   
+  # Observe team pitching
+  current_event <- observeEvent(input$viewTeamPitching, {
+    values$TeamPitching <- team_pitching_statistics 
+  })
+  
   # Show pitcher data 
-  output$pitcherData <- renderTable({ values$Pitchers })
+  output$teamPitching <- renderTable({ values$TeamPitching })
   
   # Show team data
   output$teamHitting <- renderTable({ values$TeamHitting })
