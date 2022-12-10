@@ -40,7 +40,7 @@ ui <- fluidPage(
                ),
                tabPanel(title = "Individuals",
                         # Select the individual you want to examine
-                        selectInput("batter", "Batter", c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk terada-Herze", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")),
+                        selectInput("batter", "Batter", c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk Terada-Herzer", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")),
                         tableOutput("hittingData"),
                             # Output table for their specific statistics
                             # Output visual of where most of their hits fall 
@@ -73,16 +73,17 @@ ui <- fluidPage(
 
 
 server <- function(input, output) {
-  roster_batter <- c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk terada-Herze", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")
+  # All the batters on the team
+  roster_batter <- c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk Terada-Herzer", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")
   
   # Empty data frames for individual pitching and hitting data 
   pitcher_data <- data.table(matrix(ncol = 16))
   hitting_data <- data.table(matrix(ncol = 16))
-  team_hitting <- data.frame(matrix(NA, nrow = length(roster_batter), ncol = 6))
+  team_hitting <- data.frame(matrix(NA, nrow = length(roster_batter), ncol = 16))
   
   # Creating hitting statistics for the team
-  team_hitting_statistics <- data.frame(matrix(NA, ncol = 6, nrow = length(roster_batter)))
-  colnames(team_hitting_statistics) <- c("Name", "1B","2B","3B","HR","BB")
+  team_hitting_statistics <- data.frame(matrix(NA, ncol = 16, nrow = length(roster_batter)))
+  colnames(team_hitting_statistics) <- c("Name", "1B","2B","3B","HR","BB", "H", "AB", "AVG", "OBP", "K%", "BB%", "R", "RBI", "SLG", "OPS")
   for (i in 1:length(roster_batter)) {
     
     # Select pitcher of interest
@@ -90,13 +91,52 @@ server <- function(input, output) {
     
     # Add to table
     team_hitting_statistics[i,"Name"] <- current_batter
+    # Singles
     team_hitting_statistics[i,"1B"] <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome == "Single") %>% nrow()
+    # Doubles
     team_hitting_statistics[i,"2B"] <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome == "Double") %>% nrow()
+    # Triples
     team_hitting_statistics[i,"3B"] <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome == "Triple") %>% nrow()
+    # Home runs
     team_hitting_statistics[i,"HR"] <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome == "HR") %>% nrow()
+    # Walks
     team_hitting_statistics[i,"BB"] <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome == "Walk") %>% nrow()
-    
+    # Number of at-bats
+    team_hitting_statistics[i,"AB"] <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome %in% c("Out", "Strike Out", "Single", "Double", "Triple", "HR", "Error", "Fielder's Choice", "Double Play", "Triple Play")) %>% nrow()
+    # Number of hits
+    team_hitting_statistics[i,"H"] <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome %in% c("Single", "Double", "Triple", "HR")) %>% nrow()
+    # Batting Average
+    number_at_bats <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome %in% c("Out", "Strike Out", "Single", "Double", "Triple", "HR", "Error", "Fielder's Choice", "Double Play", "Triple Play")) %>% nrow()
+    number_hits <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome %in% c("Single", "Double", "Triple", "HR")) %>% nrow()
+    team_hitting_statistics[i,"AVG"] <- round((number_hits / number_at_bats),3)
+    # On-Base Percentage: (H+BB+HBP) / (AB + BB + HBP + SF)
+    number_hbp <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome == "HBP") %>% nrow()
+    number_sf <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome == "Sac Fly") %>% nrow()
+    number_plate_appearances <- team_hitting_statistics[i,"AB"] + team_hitting_statistics[i,"BB"] + number_hbp + number_sf
+    number_on_base <- team_hitting_statistics[i,"H"] + team_hitting_statistics[i,"BB"] + number_hbp
+    team_hitting_statistics[i,"OBP"] <- round((number_on_base / number_plate_appearances),3)
+    # Strikeout percentage
+    number_strikeouts <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome %in% c("Strike Out")) %>% nrow()
+    team_hitting_statistics[i,"K%"] <- round((number_strikeouts / number_plate_appearances),3)
+    # Walk percentage
+    number_walks <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome %in% c("Walk")) %>% nrow()
+    team_hitting_statistics[i,"BB%"] <- round((number_walks / number_plate_appearances),3)
+    # Number of Runs
+    team_hitting_statistics[i,"R"] <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Runs > 0) %>% nrow()
+    # Number of RBI's
+    team_hitting_statistics[i,"RBI"] <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(`RBI's` > 0) %>% nrow()
+    # Slugging Percentages: total bases / AB
+    total_1B <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome == "Single") %>% nrow()
+    total_2B <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome == "Double") %>% nrow()
+    total_3B <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome == "Triple") %>% nrow()
+    total_HR <- innerSquad %>% filter(`Batter's Name` == current_batter) %>% filter(Outcome == "HR") %>% nrow()
+    total_bases <- total_1B + total_2B + total_3B + total_HR
+    team_hitting_statistics[i,"SLG"] <- round((total_bases / number_at_bats),3)
+    # On Base Plus Slugging
+    team_hitting_statistics[i,"OPS"] <- team_hitting_statistics[i,"OBP"] + team_hitting_statistics[i,"SLG"] 
   }
+  
+  # Creating pitching statistics for the team
   
   # Making our total data set a reactive value so that it continues to update 
   values <- reactiveValues(Pitchers = pitcher_data, Hitters = hitting_data, TeamHitting = team_hitting)
