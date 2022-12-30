@@ -12,8 +12,8 @@ library(googledrive)
 library(shinythemes)
 
 # Read in sample data 
-#current_data <- read_excel(path = "TotalInnerSquadFall.xlsx", col_names = TRUE)
-current_data <- read_csv("swarthmore_baseball - JeterGame.csv")
+current_data <- read_excel(path = "TotalInnerSquadFall.xlsx", col_names = TRUE)
+#current_data <- read_csv("swarthmore_baseball - JeterGame.csv")
 
 # Define UI for application 
 ui <- fluidPage(
@@ -41,8 +41,8 @@ ui <- fluidPage(
                ),
                tabPanel(title = "Individuals",
                         # Select the individual you want to examine
-                        #selectInput("batter", "Batter", c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk Terada-Herzer", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")),
-                        selectInput("batter", "Batter", c("Brett Gardner", "Derek Jeter", "Brian McCann", "Mark Teixeira", "Chase Headley", "Chris Young", "Stephen Drew")),
+                        selectInput("batter", "Batter", c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk Terada-Herzer", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")),
+                        #selectInput("batter", "Batter", c("Brett Gardner", "Derek Jeter", "Brian McCann", "Mark Teixeira", "Chase Headley", "Chris Young", "Stephen Drew")),
                         # Output table for their specific statistics
                         tableOutput("hittingData"),
                         # Output visuals
@@ -65,8 +65,8 @@ ui <- fluidPage(
                ),
                tabPanel(title = "Individuals",
                         # Select the individual you want to examine
-                        #selectInput("pitcher", "Pitcher", c("Alex Rimerman", "Casey Jordan", "Ethan Weiss", "Jeremy Jensen", "Josh Rankey", "Liam Alpern", "Matt Silvestre", "Steven Jungers")),
-                        selectInput("pitcher", "Pitcher", c("Hiroki Kuroda", "Kevin Gausman")),
+                        selectInput("pitcher", "Pitcher", c("Alex Rimerman", "Casey Jordan", "Ethan Weiss", "Jeremy Jensen", "Josh Rankey", "Liam Alpern", "Matt Silvestre", "Steven Jungers")),
+                        #selectInput("pitcher", "Pitcher", c("Hiroki Kuroda", "Kevin Gausman")),
                         tableOutput("pitcherData"),
                         # Graph showing proportion of outcomes (bar graph)
                             # Matrix showing chance of getting an out given count and runners on base 
@@ -79,10 +79,10 @@ ui <- fluidPage(
 
 
 server <- function(input, output) {
-  #roster_batter <- c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk Terada-Herzer", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")
-  #roster_pitcher <- c("Alex Rimerman", "Casey Jordan", "Ethan Weiss", "Jeremy Jensen", "Josh Rankey", "Liam Alpern", "Matt Silvestre", "Steven Jungers")
-  roster_batter <- c("Brett Gardner", "Derek Jeter", "Brian McCann", "Mark Teixeira", "Chase Headley", "Chris Young", "Stephen Drew")
-  roster_pitcher <- c("Hiroki Kuroda", "Kevin Gausman")
+  roster_batter <- c("Austin Burgess", "Jett Shue", "Joe Radek", "Evan Johnson", "Kirk Terada-Herzer", "Benjamin Buchman", "Kaiden Rosenbaum", "Nate Jbara", "Max Roffwarg", "Aidan Sullivan", "Matthew Silvestre", "Xavier Taylor", "Emmet Reynolds", "Max Beadling", "Sam Marco")
+  roster_pitcher <- c("Alex Rimerman", "Casey Jordan", "Ethan Weiss", "Jeremy Jensen", "Josh Rankey", "Liam Alpern", "Matt Silvestre", "Steven Jungers")
+  #roster_batter <- c("Brett Gardner", "Derek Jeter", "Brian McCann", "Mark Teixeira", "Chase Headley", "Chris Young", "Stephen Drew")
+  #roster_pitcher <- c("Hiroki Kuroda", "Kevin Gausman")
   
   # Empty data frames for individual pitching and hitting data 
   pitcher_data <- data.table(matrix(ncol = 16))

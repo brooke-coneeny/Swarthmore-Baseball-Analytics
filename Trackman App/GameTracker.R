@@ -81,7 +81,7 @@ ui <- fluidPage(
                           # Button: what is the outcome of the at bat? 
                           selectInput("outcome", "Outcome", c("NULL", "Out", "Strike Out", "Single", "Double", "Triple", "HR", "Walk", "HBP", "Sac Fly", "Sac Bunt", "Squeeze Bunt", "Error", "Intentional Walk", "Fielder's Choice", "Double Play", "Triple Play")),
                           
-                          # Select Input: where was it hit?
+                          # Text Input: where was it hit?
                           textInput("location", "Location of Ball in Play", " "),
                           verbatimTextOutput("location"),
 
@@ -100,10 +100,14 @@ ui <- fluidPage(
                           selectInput("strike", "Strike", c(0,1,2,3)),
                           selectInput("strikeType", "Strike Type", c("NA", "Swinging", "Looking", "Foul")),
                           selectInput("ball", "Ball", c(0,1,2,3,4)),
+                          
+                          # Text Input: other notes
+                          textInput("notes", "Additional Notes", " "),
+                          verbatimTextOutput("notes"),
                    ),
                    column(5, 
                           # Add field image 
-                          tags$img(src = "ShinyAppField.png", 
+                          tags$img(src = "Locations.png", 
                                    height = "700px",
                                    width = "700px",
                                    align = "center",
@@ -132,12 +136,12 @@ ui <- fluidPage(
 server <- function(input, output) {
 
   # Data table holding the entire play-by-play for the game 
-  individualData = data.table(matrix(ncol = 16))
-  names(individualData)=c("Date", "Batter's Name", "Pitcher's Name", "Team", "Inning", "Outs","Runners","Strikes", "Strike Type", "Balls","Outcome", "Location", "RBI's", "Runs", "Away's Runs", "Home's Runs")
+  individualData = data.table(matrix(ncol = 17))
+  names(individualData)=c("Date", "Batter's Name", "Pitcher's Name", "Team", "Inning", "Outs","Runners","Strikes", "Strike Type", "Balls","Outcome", "Location", "RBI's", "Runs", "Away's Runs", "Home's Runs", "Additional Notes")
   
   # Data table holding the play-by-play for the current pitch
-  temp = as.data.frame(matrix(data = NA, nrow = 1, ncol = 16))
-  names(temp)=c("Date", "Batter's Name", "Pitcher's Name", "Team", "Inning", "Outs","Runners","Strikes", "Strike Type", "Balls","Outcome", "Location", "RBI's", "Runs", "Away's Runs", "Home's Runs")
+  temp = as.data.frame(matrix(data = NA, nrow = 1, ncol = 17))
+  names(temp)=c("Date", "Batter's Name", "Pitcher's Name", "Team", "Inning", "Outs","Runners","Strikes", "Strike Type", "Balls","Outcome", "Location", "RBI's", "Runs", "Away's Runs", "Home's Runs", "Additional Notes")
   
   # Data table holding the score of the game 
   scoreBoard = as.data.frame(matrix(data = NA, ncol = 10, nrow = 2))
@@ -166,6 +170,7 @@ server <- function(input, output) {
     values$Part[1,]$Location=input$location
     values$Part[1,]$`RBI's`=input$rbi
     values$Part[1,]$Runs=input$runs
+    values$Part[1,]$`Additional Notes`=input$notes
     
     # Enter score into both total data set and score board
     values$Part[1,]$`Away's Runs`=input$runsaway
